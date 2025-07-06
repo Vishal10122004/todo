@@ -1,0 +1,15 @@
+# Node
+node_modules/
+
+# Logs
+logs
+*.log
+
+# dotenv
+*.env
+
+# React build
+/client/build
+
+# Misc
+.DS_Store
