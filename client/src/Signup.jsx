@@ -10,7 +10,7 @@ function Signup({ onSignupComplete, switchToLogin }) {
     e.preventDefault();
     setErrorMessage('');
 
-    const res = await fetch('http://localhost:3001/signup', {
+    const res = await fetch('https://todo-m39x.onrender.com/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
