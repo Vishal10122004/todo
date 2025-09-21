@@ -1,48 +1,89 @@
 /* Login.css */
 
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #6dd5ed, #2193b0);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card */
 .login-container {
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  width: 360px;
   text-align: center;
-  margin-top: 100px;
+  animation: fadeIn 0.9s ease-in-out;
+}
+
+.login-container h2 {
+  margin-bottom: 20px;
+  color: #2193b0;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 .login-form {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
+/* Inputs */
 .login-input {
-  padding: 10px;
-  border-radius: 6px;
+  padding: 12px;
+  border-radius: 10px;
   border: 1px solid #ccc;
-  width: 250px;
-  font-size: 16px;
+  font-size: 15px;
+  transition: all 0.3s ease;
 }
 
 .login-input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #2193b0;
+  box-shadow: 0 0 10px rgba(33, 147, 176, 0.4);
 }
 
+/* Button */
 .login-button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  border-radius: 20px;
-  background-color: #4CAF50;
+  padding: 12px 0;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #6dd5ed, #2193b0);
   color: white;
   border: none;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.3s;
+  font-size: 16px;
+  transition: transform 0.2s, background 0.3s;
 }
 
 .login-button:hover {
-  background-color: #45a049;
+  background: linear-gradient(135deg, #56cfe1, #17849c);
+  transform: scale(1.05);
 }
 
+/* Error */
 .login-error {
-  color: red;
-  margin-top: 20px;
+  color: #e63946;
+  margin-top: 10px;
+  font-size: 14px;
 }
 
+/* Switch */
 .login-switch {
   margin-top: 20px;
+  font-size: 14px;
 }
+
+.login-switch button {
+  background: none;
+  border: none;
+  color: #2193b0;
+  font-weight: bold;
+  cursor: pointer;
+  transition: co
