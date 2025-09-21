@@ -1,48 +1,107 @@
 /* Signup.css */
 
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card */
 .signup-container {
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  width: 360px;
   text-align: center;
-  margin-top: 100px;
+  animation: fadeIn 0.9s ease-in-out;
+}
+
+.signup-container h2 {
+  margin-bottom: 20px;
+  color: #e63946;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 .signup-form {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
+/* Inputs */
 .signup-input {
-  padding: 10px;
-  border-radius: 6px;
+  padding: 12px;
+  border-radius: 10px;
   border: 1px solid #ccc;
-  width: 250px;
-  font-size: 16px;
+  font-size: 15px;
+  transition: all 0.3s ease;
 }
 
 .signup-input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #e63946;
+  box-shadow: 0 0 10px rgba(230, 57, 70, 0.4);
 }
 
+/* Button */
 .signup-button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  border-radius: 20px;
-  background-color: #007bff;
+  padding: 12px 0;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #ff9a9e, #e63946);
   color: white;
   border: none;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.3s;
+  font-size: 16px;
+  transition: transform 0.2s, background 0.3s;
 }
 
 .signup-button:hover {
-  background-color: #0056b3;
+  background: linear-gradient(135deg, #f37272, #c52832);
+  transform: scale(1.05);
 }
 
+/* Error */
+.signup-error {
+  color: #e63946;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* Switch */
 .signup-switch {
   margin-top: 20px;
+  font-size: 14px;
 }
 
-.signup-error {
-  color: red;
-  margin-top: 20px;
+.signup-switch button {
+  background: none;
+  border: none;
+  color: #e63946;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+.signup-switch button:hover {
+  color: #a4161a;
+  text-shadow: 0 0 8px rgba(230, 57, 70, 0.6);
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
