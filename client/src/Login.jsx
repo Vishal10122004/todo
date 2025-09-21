@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Login.css'; // ✅ Import your separate CSS
+import './Login.css';
 
 function Login({ onLoginSuccess, switchToSignup }) {
   const [username, setUsername] = useState('');
@@ -10,23 +10,25 @@ function Login({ onLoginSuccess, switchToSignup }) {
     e.preventDefault();
     setErrorMessage('');
 
-    const res = await fetch('https://todo-m39x.onrender.com/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const res = await fetch('https://todo-m39x.onrender.com/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (res.ok) {
-      onLoginSuccess(username);
-    } else {
-      const errorText = await res.text();
-      if (errorText.includes('Invalid credentials')) {
-        setErrorMessage(
-          "Account doesn't exist or password is wrong. Please sign up if needed."
-        );
+      if (res.ok) {
+        onLoginSuccess(username);
       } else {
-        setErrorMessage('Something went wrong. Please try again.');
+        const errorText = await res.text();
+        if (errorText.includes('Invalid credentials')) {
+          setErrorMessage("Account doesn't exist or password is wrong. Please sign up if needed.");
+        } else {
+          setErrorMessage('Something went wrong. Please try again.');
+        }
       }
+    } catch (err) {
+      setErrorMessage('Server not reachable. Please try later.');
     }
   };
 
@@ -34,36 +36,28 @@ function Login({ onLoginSuccess, switchToSignup }) {
     <div className="login-container">
       <h2>Login</h2>
       <form onSubmit={handleLogin} className="login-form">
-        <div>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            className="login-input"
-          />
-        </div>
-        <div style={{ marginTop: '10px' }}>
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="login-input"
-          />
-        </div>
-        <div>
-          <button type="submit" className="login-button">
-            Login
-          </button>
-        </div>
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+          className="login-input"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="login-input"
+        />
+        <button type="submit" className="login-button">
+          Login
+        </button>
       </form>
 
-      {errorMessage && (
-        <p className="login-error">{errorMessage}</p>
-      )}
+      {errorMessage && <p className="login-error">{errorMessage}</p>}
 
       <p className="login-switch">
         Don’t have an account?{' '}
