@@ -7,7 +7,14 @@ dotenv.config();
 
 const { Pool } = pkg;
 const app = express();
-app.use(cors());
+
+// ✅ Use strict CORS so only your frontend can call backend
+app.use(cors({
+  origin: ["https://warm-salamander-24e7ab.netlify.app", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const pool = new Pool({
@@ -18,8 +25,12 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+// 🔹 Helper function: wrap async routes
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
 // ✅ SIGNUP
-app.post('/signup', async (req, res) => {
+app.post('/signup', asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   const hash = await bcrypt.hash(password, 10);
 
@@ -28,140 +39,115 @@ app.post('/signup', async (req, res) => {
       'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
       [username, hash]
     );
-    res.status(200).send('Signup successful');
+    res.status(200).json({ message: 'Signup successful' });
   } catch (err) {
-    console.error('Signup error:', err);
-    res.status(400).send('Username already exists or DB error');
+    console.error('❌ Signup error:', err);
+    if (err.code === '23505') {  // unique_violation in Postgres
+      res.status(400).json({ error: 'Username already exists' });
+    } else {
+      res.status(500).json({ error: 'Database error during signup' });
+    }
   }
-});
+}));
 
 // ✅ LOGIN
-app.post('/login', async (req, res) => {
+app.post('/login', asyncHandler(async (req, res) => {
   const { username, password } = req.body;
+  console.log(`🔑 Login attempt for user: ${username}`);
 
-  try {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+  const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
 
-    if (result.rows.length === 0) {
-      return res.status(400).send('Invalid credentials');
-    }
-
-    const user = result.rows[0];
-    const valid = await bcrypt.compare(password, user.password_hash);
-
-    if (valid) {
-      res.status(200).send('Login successful');
-    } else {
-      res.status(400).send('Invalid credentials');
-    }
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).send('Server error during login');
+  if (result.rows.length === 0) {
+    return res.status(400).json({ error: 'Invalid username or password' });
   }
-});
 
-// ✅ GET TASKS (fixed)
-app.get('/tasks', async (req, res) => {
+  const user = result.rows[0];
+  const valid = await bcrypt.compare(password, user.password_hash);
+
+  if (valid) {
+    res.status(200).json({ message: 'Login successful' });
+  } else {
+    res.status(400).json({ error: 'Invalid username or password' });
+  }
+}));
+
+// ✅ GET TASKS
+app.get('/tasks', asyncHandler(async (req, res) => {
   const { username } = req.query;
+  const userResult = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
 
-  try {
-    const userResult = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+  if (userResult.rows.length === 0) return res.status(400).json({ error: 'User not found' });
 
-    if (userResult.rows.length === 0) return res.status(400).send('User not found');
+  const userId = userResult.rows[0].id;
+  const tasks = await pool.query(
+    'SELECT id, text, status FROM tasks WHERE user_id = $1',
+    [userId]
+  );
 
-    const userId = userResult.rows[0].id;
+  res.json(tasks.rows);
+}));
 
-    const tasks = await pool.query(
-      'SELECT id, text, status FROM tasks WHERE user_id = $1',
-      [userId]
-    );
-
-    res.json(tasks.rows);
-  } catch (err) {
-    console.error('Error fetching tasks:', err);
-    res.status(500).send('Server error while fetching tasks');
-  }
-});
-
-// ✅ ADD TASK (fixed)
-app.post('/tasks', async (req, res) => {
+// ✅ ADD TASK
+app.post('/tasks', asyncHandler(async (req, res) => {
   const { username, text } = req.body;
+  const userResult = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
 
-  try {
-    const userResult = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+  if (userResult.rows.length === 0) return res.status(400).json({ error: 'User not found' });
 
-    if (userResult.rows.length === 0) return res.status(400).send('User not found');
+  const userId = userResult.rows[0].id;
+  const insertResult = await pool.query(
+    'INSERT INTO tasks (user_id, text, status) VALUES ($1, $2, $3) RETURNING id',
+    [userId, text, 'todo']
+  );
 
-    const userId = userResult.rows[0].id;
-
-    const insertResult = await pool.query(
-      'INSERT INTO tasks (user_id, text, status) VALUES ($1, $2, $3) RETURNING id',
-      [userId, text, 'todo']
-    );
-
-    res.send(insertResult.rows[0].id.toString());
-  } catch (err) {
-    console.error('Error adding task:', err);
-    res.status(500).send('Server error while adding task');
-  }
-});
+  res.json({ id: insertResult.rows[0].id });
+}));
 
 // ✅ UPDATE TASK
-app.put('/tasks/:id', async (req, res) => {
+app.put('/tasks/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { text, status } = req.body;
 
-  try {
-    await pool.query(
-      'UPDATE tasks SET text = $1, status = $2 WHERE id = $3',
-      [text, status, id]
-    );
-    res.send('Task updated');
-  } catch (err) {
-    console.error('Error updating task:', err);
-    res.status(500).send('Server error while updating task');
-  }
-});
+  await pool.query(
+    'UPDATE tasks SET text = $1, status = $2 WHERE id = $3',
+    [text, status, id]
+  );
+  res.json({ message: 'Task updated' });
+}));
 
 // ✅ DELETE TASK
-app.delete('/tasks/:id', async (req, res) => {
+app.delete('/tasks/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
+  await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
+  res.json({ message: 'Task deleted' });
+}));
 
-  try {
-    await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
-    res.send('Task deleted');
-  } catch (err) {
-    console.error('Error deleting task:', err);
-    res.status(500).send('Server error while deleting task');
-  }
-});
-
-// ✅ SHARE TASK (duplicate the task for another user)
-app.post('/tasks/:id/share', async (req, res) => {
+// ✅ SHARE TASK
+app.post('/tasks/:id/share', asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { toUsername } = req.body;
 
-  try {
-    const taskResult = await pool.query('SELECT text, status FROM tasks WHERE id = $1', [id]);
-    if (taskResult.rows.length === 0) return res.status(404).send('Task not found');
+  const taskResult = await pool.query('SELECT text, status FROM tasks WHERE id = $1', [id]);
+  if (taskResult.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
 
-    const userResult = await pool.query('SELECT id FROM users WHERE username = $1', [toUsername]);
-    if (userResult.rows.length === 0) return res.status(400).send('User not found');
+  const userResult = await pool.query('SELECT id FROM users WHERE username = $1', [toUsername]);
+  if (userResult.rows.length === 0) return res.status(400).json({ error: 'User not found' });
 
-    const { text, status } = taskResult.rows[0];
-    const toUserId = userResult.rows[0].id;
+  const { text, status } = taskResult.rows[0];
+  const toUserId = userResult.rows[0].id;
 
-    // Duplicate task for the other user
-    await pool.query(
-      'INSERT INTO tasks (user_id, text, status) VALUES ($1, $2, $3)',
-      [toUserId, text, status]
-    );
+  await pool.query(
+    'INSERT INTO tasks (user_id, text, status) VALUES ($1, $2, $3)',
+    [toUserId, text, status]
+  );
 
-    res.send('Task shared');
-  } catch (err) {
-    console.error('Error sharing task:', err);
-    res.status(500).send('Server error while sharing task');
-  }
+  res.json({ message: 'Task shared' });
+}));
+
+// 🔹 Centralized error handler (last middleware)
+app.use((err, req, res, next) => {
+  console.error("🔥 Unhandled error:", err);
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
 // ✅ Start Server
